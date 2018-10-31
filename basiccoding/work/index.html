@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+	
+	<head>
+		<title>Kulina User Review</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous" />
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+	</head>
+	
+	<body>
+		<div class="container">
+			<br />
+			
+			<h3 align="center">Kulina User Review</h3>
+			<br />
+			<div align="right" style="margin-bottom:5px;">
+				<button type="button" name="add_button" id="add_button" class="btn btn-success btn-xs">Add</button>
+			</div>
+
+			<div class="table-responsive">
+				<table class="table table-bordered table-striped">
+					<thead>
+						<tr>
+							<th>Order ID</th>
+							<th>Product ID</th>
+							<th>User ID</th>
+							<th>Rating</th>
+							<th>Review</th>
+							<th>Created At</th>
+							<th>Updated At</th>
+							<th>Edit</th>
+							<th>Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+	</body>
+
+</html>
+
+<div id="crudAPIModal" class="modal fade" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form method="post" id="crud_api_form">
+				<div class="modal-header">
+		        	<button type="button" class="close" data-dismiss="modal">&times;</button>
+		        	<h4 class="modal-title">Add Data</h4>
+		      	</div>
+		      	<div class="modal-body">
+					<div class="form-group">
+						<label>Enter Order ID</label>
+						<input type="text" name="order_id" id="order_id" class="form_control" />
+					</div>
+		      		<div class="form-group">
+			        	<label>Enter Product ID</label>
+			        	<input type="text" name="product_id" id="product_id" class="form-control" />
+			        </div>
+			        <div class="form-group">
+			        	<label>Enter User ID</label>
+			        	<input type="text" name="user_id" id="user_id" class="form-control" />
+			        </div>
+					<div class="form-group">
+			        	<label>Enter Rating (1-5)</label>
+			        	<input type="text" name="rating" id="rating" class="form-control" />
+			        </div>
+					<div class="form-group">
+			        	<label>Write Your Review</label>
+			        	<textarea name="user_id" id="user_id" class="form-control"></textarea>
+			        </div>
+			    </div>
+			    <div class="modal-footer">
+			    	<input type="hidden" name="hidden_id" id="hidden_id" />
+					<input type="hidden" name="created_at" id="created_at" />
+					<input type="hidden" name="updated_at" id="updated_at" />
+			    	<input type="hidden" name="action" id="action" value="insert" />
+			    	<input type="submit" name="button_action" id="button_action" class="btn btn-info" value="Insert" />
+			    	<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	      		</div>
+			</form>
+		</div>
+  	</div>
+</div>
+
+<script type="text/javascript">
+	$(document).ready(function(){
+
+		fetch_data();
+
+		function fetch_data() {
+			$.ajax({
+				url:"fetch.php",
+				success:function(data)
+				{
+					$('tbody').html(data);
+				}
+			})
+		}
+
+		$('#add_button').click(function() {
+			$('#action').val('insert');
+			$('#button_action').val('Insert');
+			$('.modal-title').text('Add Data');
+			$('#crudAPIModal').modal('show');
+		});
+
+		$('#crud_api_form').on('submit', function(event) {
+			event.preventDefault();
+			if($('#order_id').val() == '') {
+				alert("Enter Order ID");
+			}
+			else if($('#product_id').val() == '') {
+				alert("Enter Product ID");
+			}
+			else if($('#user_id').val() == '') {
+				alert("Enter User ID");
+			}
+			else if($('#rating').val() == '') {
+				alert("Enter Rating");
+			}
+			else if($('#rating').val() < 1 || $('#rating').val() > 5) {
+				alert("Rating Must Be from 1 to 5");
+			}
+			else if ($('#review').val() == '') {
+				alert("Write Down Your Review");
+			}
+			else {
+				var form_data = $(this).serialize();
+				$.ajax({
+					url:"action.php",
+					method:"POST",
+					data:form_data,
+					success:function(data) {
+						fetch_data();
+						$('#crud_api_form')[0].reset();
+						$('#crudAPIModal').modal('hide');
+						if(data == 'insert') {
+							alert("Data Inserted");
+						}
+						
+						if(data == 'update') {
+							alert("Data Updated");
+						}
+					}
+				});
+			}
+		});
+
+		$(document).on('click', '.edit', function() {
+			var id = $(this).attr('id');
+			var action = 'fetch_single';
+			$.ajax({
+				url:"action.php",
+				method:"POST",
+				data:{id:id, action:action},
+				dataType:"json",
+				success:function(data) {
+					$('#hidden_id').val(id);
+					$('#order_id').val(data.order_id);
+					$('#product_id').val(data.product_id);
+					$('#user_id').val(data.user_id);
+					$('#rating').val(data.rating);
+					$('#review').val(data.review);
+					$('#action').val('update');
+					$('#button_action').val('Update');
+					$('.modal-title').text('Edit Data');
+					$('#crudAPIModal').modal('show');
+				}
+			})
+		});
+
+		$(document).on('click', '.delete', function() {
+			var id = $(this).attr("id");
+			var action = 'delete';
+			if(confirm("Are you sure you want to remove this data?")) {
+				$.ajax({
+					url:"action.php",
+					method:"POST",
+					data:{id:id, action:action},
+					success:function(data) {
+						fetch_data();
+						alert("Data Deleted");
+					}
+				});
+			}
+		});
+	});
+</script>
